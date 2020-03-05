@@ -39,7 +39,6 @@ module.exports = {
                         msg:'Success',
                         user:doc
                     })
-                    console.log(123)
                     //处理session
                     
                 }

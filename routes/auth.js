@@ -10,7 +10,7 @@ var router = express.Router();
 
 router.all(/^\/.*?(?<!login)$/, function(req, res, next) {
   //session auth
-  console.log("1",req.session)
+  // console.log("1",req.session)
   // console.log("2",req.cookies)
   if(req.path.split('/')[req.path.split('/').length-1] === 'logout'){
     next()

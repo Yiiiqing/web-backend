@@ -6,6 +6,7 @@
 - Scheduled job: using node-schedule.
 - CURD of users
 - Migration & Seed
+- Upload Files
 
 ###### Frame,modules
 - express

@@ -13,7 +13,7 @@ var logger = require('morgan');
 var session = require('express-session');
 const redis = require('redis')
 var RedisStore = require('connect-redis')(session);
-var cron = require('./cron');
+
 require('dotenv').config();
 
 //global values
@@ -66,7 +66,7 @@ var redisClient = redis.createClient(global.sessionConfig.sessionStore)
 app.use('/public',express.static(path.join(__dirname, 'public')));
 
 //定时
-app.use(cron)
+require('./cron');
 
 app.all("*",function(req,res,next){
   //设置允许跨域的域名，*代表允许任意域名跨域
@@ -119,7 +119,8 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.json({
     result:1,
-    msg:'参数错误,请检查api参数.如若确认正确,联系小猿处理'
+    msg:'参数错误,请检查api参数.如若确认正确,联系小猿处理',
+    error:err.status +' ' + err.message
   })
   // res.render('error');
 });

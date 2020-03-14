@@ -22,7 +22,9 @@ router.post('/login',auth_controller.login)
 .get('/logout',auth_controller.logout)
 .get('/test',auth_controller.test)
 .post('/user/add',admin_controller.add)
-
+.post('/mobile/code/get',auth_controller.getSms)
+.post('/mobile/logup',auth_controller.mobileLogUp)
+.post('/mobile/login',auth_controller.mobileLogIn)
 
 
 //file option

@@ -1,4 +1,10 @@
-
+/**
+ * @author [Yiqing Zhang]
+ * @email [y.zhang@live.com]
+ * @create date 2020-03-03 10:59:58
+ * @modify date 2020-03-03 10:59:58
+ * @desc [description]
+ */
 'use strict';
 
 const fs = require('fs');

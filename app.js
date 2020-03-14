@@ -17,7 +17,7 @@ var RedisStore = require('connect-redis')(session);
 require('dotenv').config();
 
 //global values
-global.sessionConfig = {
+global.Config = {
   cookie:{
     secure:false,
     maxAge: 1000 * 60 * process.env.cookie_expire,//cookie过期时间设置,单位为毫秒
@@ -31,11 +31,11 @@ global.sessionConfig = {
     db:process.env.REDIS_DB,
     logErrors: true
   },
-  calcStore:{
+  redisStore:{
     host:process.env.REDIS_HOST,
     port:process.env.REDIS_PORT,
     password:process.env.REDIS_PASSWORD,
-    prefix:'cron-',
+    prefix:'yiqing-',
     db:process.env.REDIS_DB,
     logErrors: true
   }
@@ -59,8 +59,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 
-console.log("connecting...redis: ",global.sessionConfig.sessionStore.host)
-var redisClient = redis.createClient(global.sessionConfig.sessionStore)
+console.log("connecting...redis: ",global.Config.sessionStore.host)
+var redisClient = redis.createClient(global.Config.sessionStore)
 
 //访问在public内的静态文件
 app.use('/public',express.static(path.join(__dirname, 'public')));
@@ -98,7 +98,7 @@ app.use(session({
   resave:true,//每次请求都重新设置session,反正在auth中已经做了筛选,所以这里要写false
   rolling:true,//是否按照原设定的maxAge值重设session同步到cookie中
   saveUninitialized:true,//是否保存未初始化的会话,我设置为不保存,为了仅在登录成功后保存
-  cookie:global.sessionConfig.cookie //不再自动设置
+  cookie:global.Config.cookie //不再自动设置
 }))
 app.use('/',authRouter)
 app.use('/', indexRouter);
@@ -122,6 +122,7 @@ app.use(function(err, req, res, next) {
     msg:'参数错误,请检查api参数.如若确认正确,联系小猿处理',
     error:err.status +' ' + err.message
   })
+  console.log(err)
   // res.render('error');
 });
 

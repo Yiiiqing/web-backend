@@ -13,14 +13,26 @@ const spawn = require('cross-spawn')
 var colors = require('colors')
 const child_process = require('child_process')
 
+var force = false
+var modelNameArray = []
+var modelIdArray = []
+
 async function scaffold() {
+    //check --force option
+    if (process.argv[2] === '--force') {
+        force = true
+    }
+    console.log(`force option --> ${force}`.brightBlue)
     await createSequelizeFile()
     await initSequelize()
     await createDatabaseConfig()
     await rewritemodelIndex()
     await generateModel()
+    await generateRouter()
+    await addRouterToApp()
     await generateController()
 }
+
 async function queryUser(query, choices) {
     // console.log(process.stdin.isPaused(),process.stdin.once());
     process.stdout.write(query.bgRed + choices.gray)
@@ -120,8 +132,7 @@ async function createDatabaseConfig() {
     3.ask user to ensure models.
     4.call spawn to generate model and migrations
  */
-var modelNameArray = []
-var modelIdArray = []
+
 async function generateModel() {
     var modelsPath = path.join(__dirname, 'model')
     //check model dir
@@ -186,11 +197,23 @@ async function generateModel() {
                 if (result) {
                     //result would be true or false
                     //user answer is yes, do npx sequelize-cli
-                    return CliArgsArrray.forEach(element => {
-                        spawn.sync('npx', element, {
-                            stdio: 'inherit'
+                    //force?
+                    if (force) {
+                        console.log('please manually delete old migration files later!'.red)
+                        return CliArgsArrray.forEach(element => {
+                            //force?
+                            element.push('--force')
+                            spawn.sync('npx', element, {
+                                stdio: 'inherit'
+                            })
                         })
-                    })
+                    } else {
+                        return CliArgsArrray.forEach(element => {
+                            spawn.sync('npx', element, {
+                                stdio: 'inherit'
+                            })
+                        })
+                    }
                 }
             })
         })
@@ -204,11 +227,20 @@ async function generateModel() {
     2. if yes, let user input Id for one model.
  */
 async function generateController() {
-    if(modelNameArray.length === 0){
+    if (modelNameArray.length === 0) {
         return
     }
+    console.log(
+        `
+        NOTE for controller file:
+        method get for get
+        method post for add
+        method patch for update
+        method delete for delete
+    `.blue
+    )
     await queryUser('Do you need to generate controllers?', '(yes or no)').then(result => {
-        return new Promise((resolve,reject)=>{
+        return new Promise((resolve, reject) => {
             if (result) {
                 //result would be true or false
                 //user answer is yes, do generate
@@ -219,7 +251,7 @@ async function generateController() {
                         console.log('->', modelNameArray[i].blue)
                         //get id from console input for each model
                         await queryUserString('id', '(enter one)').then(result => {
-                            console.log(`id for ${modelNameArray[i]} -> ${result}`)
+                            // console.log(`id for ${modelNameArray[i]} -> ${result}`)
                             modelIdArray.push(result)
                             if (i === modelNameArray.length - 1) {
                                 console.log('Now generating...')
@@ -232,24 +264,56 @@ async function generateController() {
                 return resolve()
             }
             console.log('Okey, guess you want to do it manually'.red)
+            showExit()
             return resolve()
         })
     })
 }
+async function addRouterToApp() {
+    if (modelNameArray.length === 0) {
+        return
+    }
+    await queryUser('Do you need to add those controllers into app.js?', '(yes or no)').then(async result => {
+        if (result) {
+            if (modelNameArray.length === 0) {
+                return
+            }
+            for (let i = 0; i < modelNameArray.length; i++) {
+                modelName = modelNameArray[i].toLowerCase()
+                let templete = appRouterTemplete.replace(/{{model_low}}/g, modelName)
+                await writeFileToLine(templete)
+                console.log(
+                    `add ${modelName} router done.\n`.green +
+                        `NOTE: added at the` +
+                        ` top `.red +
+                        `position of file, please ` +
+                        colors.red.underline(`move them to the right place manually(important)`)
+                )
+            }
+        }
+    })
+}
+//往固定的行写入数据
+async function writeFileToLine(templete) {
+    const data = fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8').split('\n')
+    data.splice(data[0], 0, templete)
+    fs.writeFileSync(path.join(__dirname, '../app.js'), data.join('\n'), 'utf8')
+}
+
 async function generateAllController() {
     console.log(modelNameArray, modelIdArray)
     //check if controllers dir exists
-    if(fs.existsSync(path.join(__dirname, '../controllers'))){
+    if (fs.existsSync(path.join(__dirname, '../controllers'))) {
         console.log('controller folder exists.')
-    }else{
+    } else {
         fs.mkdirSync(path.join(__dirname, '../controllers'))
     }
     return new Promise((resolve, reject) => {
         for (let i = 0; i < modelNameArray.length; i++) {
             //create controller
-            modelName = modelNameArray[i];
-            id = modelIdArray[i];
-            let g = controllerTemplete.replace(/{{name}}/g,modelName).replace(/{{id}}/g,id)
+            modelName = modelNameArray[i]
+            id = modelIdArray[i]
+            let g = controllerTemplete.replace(/{{name}}/g, modelName).replace(/{{id}}/g, id)
             let result = fs.writeFileSync(path.join(__dirname, '../controllers', `${modelNameArray[i]}.js`), g)
             //double check
             if (fs.existsSync(path.join(__dirname, '../controllers', `${modelNameArray[i]}.js`))) {
@@ -257,19 +321,53 @@ async function generateAllController() {
             } else {
                 console.log(`generate controller file ${modelNameArray[i]}.js Failed`.red)
             }
-            if(i === modelNameArray.length-1){
+            if (i === modelNameArray.length - 1) {
                 //finished
                 resolve()
                 return showExit()
             }
         }
     })
-    
 }
-async function showAuthor(){
+async function generateRouter() {
+    if (modelNameArray.length === 0) {
+        return
+    }
+    await queryUser('Do you need to generate routers?', '(yes or no)').then(result => {
+        return new Promise((resolve, reject) => {
+            if (result) {
+                //result would be true or false
+                //user answer is yes, do generate
+                console.log('processing to generate routers...'.green)
+                let generate = async result => {
+                    for (let i = 0; i < modelNameArray.length; i++) {
+                        let modelName = modelNameArray[i].toLowerCase()
+                        console.log('->', modelName.blue)
+                        let templete = routeTemplete.replace(/{{model}}/g, modelName)
+                        new Promise((resolve, reject) => {
+                            let result = fs.writeFileSync(path.join(__dirname, '../routes', `${modelName}.js`), templete)
+                            if (fs.existsSync(path.join(__dirname, '../routes', `${modelName}.js`))) {
+                                console.log('done.')
+                                resolve()
+                            } else {
+                                reject()
+                            }
+                        })
+                    }
+                }
+                generate(result)
+                return resolve()
+            }
+            console.log('Okey, guess you want to do it manually'.red)
+            return resolve()
+        })
+    })
+}
+
+async function showAuthor() {
     console.log(copyright.brightYellow)
 }
-async function showExit(){
+async function showExit() {
     showAuthor()
     console.log('press [CTRL+C] to exit'.green)
 }
@@ -285,6 +383,10 @@ Email: y.zhang@live.com
 Author: Yiqing
 Copyright 2020-2020. All rights reserved
 `
+appRouterTemplete = `
+var {{model_low}}Router = require('./routes/{{model_low}}')
+app.use('/',{{model_low}}Router)
+`
 controllerTemplete = `
 var models = require('../db/models')
 
@@ -292,18 +394,14 @@ module.exports = {
   //post
   add: (req, res, next) => {
     let data = req.body
-    models.{{name}}.findOrCreate({
-      where: {
-        {{id}}: data.{{id}}
-      },
-      defaults: data
-    })
-      .then(([doc, created]) => {
+    models.{{name}}.create(data)
+      .then((doc) => {
         console.log(doc)
-        if (created) {
+        if (doc) {
           res.json({
             result: 0,
-            msg: 'Success'
+            msg: 'Success',
+            data:doc
           })
         } else {
           res.json({
@@ -316,7 +414,7 @@ module.exports = {
         next(err)
       })
   },
-  //post
+  //patch
   update: (req, res, next) => {
     let data = req.body
     models.{{name}}.update(data, {
@@ -368,9 +466,9 @@ module.exports = {
         next(err)
       })
   },
-  //post
+  //delete
   delete: (req, res, next) => {
-    let data = req.body
+    let data = req.query
     models.{{name}}.destroy({
       where: {
         {{id}}: data.{{id}}
@@ -459,6 +557,21 @@ db.Sequelize = Sequelize;
 
 module.exports = db;
 `
+routeTemplete = `
+var express = require('express');
+var router = express.Router();
+//import controller
+var {{model}}Controller = require('../controllers/{{model}}');
 
+//add
+router.post('/{{model}}', {{model}}Controller.add);
+//update
+router.patch('/{{model}}', {{model}}Controller.update);
+//get
+router.get('/{{model}}', {{model}}Controller.get);
+//delete
+router.delete('/{{model}}', {{model}}Controller.delete);
+
+module.exports = router;
+`
 scaffold()
-

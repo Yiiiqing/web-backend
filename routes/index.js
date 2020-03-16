@@ -42,22 +42,21 @@ var storage = multer.diskStorage({
 var upload = multer({storage:storage});
 var imgBaseUrl = '../'
 
-//上传的input框name属性为files
+//input attrubute must be files
 router.post('/files/upload',upload.array('files',2),function(req,res,next){
   console.log('req.files',req.files)
   var files = req.files;
-  
-  //设置返回结果
+  //define return 
   var result = {};
   if(!files[0]){
     res.json({
       result:1,
-      msg:'上传失败'
+      msg:'upload failed'
     })
   }else{
     res.json({
       result:0,
-      msg:'上传成功',
+      msg:'upload successfully',
       url: files[0].path
     })
   }

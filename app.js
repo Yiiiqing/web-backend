@@ -1,3 +1,4 @@
+
 /**
  * @author [Yiqing Zhang]
  * @email [y.zhang@live.com]
@@ -43,8 +44,10 @@ global.Config = {
 var authRouter = require('./routes/auth');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-
-
+var petRouter = require('./routes/pet')
+var schoolRouter = require('./routes/school')
+var houseRouter = require('./routes/house')
+var godRouter = require('./routes/god')
 var app = express();
 
 // view engine setup
@@ -103,6 +106,21 @@ app.use(session({
 app.use('/',authRouter)
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+var godRouter = require('./routes/god')
+app.use('/',godRouter)
+
+
+var schoolRouter = require('./routes/school')
+app.use('/',schoolRouter)
+
+
+var houseRouter = require('./routes/house')
+app.use('/',houseRouter)
+
+
+var petRouter = require('./routes/pet')
+app.use('/',petRouter)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

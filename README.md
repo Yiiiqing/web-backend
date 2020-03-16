@@ -9,7 +9,7 @@
 - Phone login & logup(tencent sms service)
 
 ##### Backend scaffold module 
-- Using just one command to generate models,migrations,controllers!
+- Using just one command to generate models,migrations,controllers and routes!
 1. put model xlsx files in ./saffold/model folder.
 1. in root dir, run
 ```node scaffold/scaffold.js```
@@ -24,7 +24,7 @@
 
 
 ###### v2.0
-- add backend scaffold module.
+- add backend scaffold module. Using just one command to generate models,migrations,controllers and routes!
 
 ###### v1.0
 - implement basic function as mentioned 

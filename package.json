@@ -7,7 +7,7 @@
     "dev": "nodemon ./bin/www"
   },
   "dependencies": {
-    "async": "^3.2.0",
+    "async": "^3.2.2",
     "child_process": "^1.0.2",
     "colors": "^1.4.0",
     "connect-redis": "^4.0.4",
